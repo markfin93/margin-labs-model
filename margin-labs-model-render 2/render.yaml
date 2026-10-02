@@ -1,0 +1,6 @@
+services:
+  - type: web
+    name: margin-labs-model
+    runtime: static
+    buildCommand: ""
+    staticPublishPath: .
