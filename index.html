@@ -1,0 +1,371 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Margin Labs Five-Year Model</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans+Condensed:wght@500;600;700&family=IBM+Plex+Sans:wght@400;500;600&display=swap">
+<style>
+/* Layout: control rail on the left (inputs), ledger on the right (outputs: tiles → charts → five-year table). Stacks on phones. */
+:root{
+  --bg:#EEF1F0; --panel:#FFFFFF; --ink:#13201E; --muted:#5B6B68; --line:#D5DCDA;
+  --accent:#0E6656; --accent-soft:#D7EAE5; --repeat:#B7791F; --repeat-soft:#F3E6CF;
+  --warn:#A3412C; --warn-soft:#F6DED7; --ok:#2F7A4A;
+  --f-display:"IBM Plex Sans Condensed","Arial Narrow",system-ui,sans-serif;
+  --f-body:"IBM Plex Sans",system-ui,-apple-system,"Segoe UI",sans-serif;
+  --f-num:"IBM Plex Mono",ui-monospace,"SFMono-Regular",Menlo,monospace;
+}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
+  --bg:#0F1716; --panel:#162220; --ink:#E4ECEA; --muted:#93A5A1; --line:#2A3A37;
+  --accent:#4FC2A8; --accent-soft:#1D3933; --repeat:#E0A548; --repeat-soft:#3A2F1C;
+  --warn:#F08A72; --warn-soft:#3D221C; --ok:#6CC58D; color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#0F1716; --panel:#162220; --ink:#E4ECEA; --muted:#93A5A1; --line:#2A3A37;
+  --accent:#4FC2A8; --accent-soft:#1D3933; --repeat:#E0A548; --repeat-soft:#3A2F1C;
+  --warn:#F08A72; --warn-soft:#3D221C; --ok:#6CC58D; color-scheme:dark}
+*{box-sizing:border-box}
+[hidden]{display:none!important}
+body{background:var(--bg);color:var(--ink);font-family:var(--f-body);font-size:14px;line-height:1.45;padding-inline:16px;padding-block:20px 40px}
+.wrap{max-width:1280px;margin:0 auto;display:flex;flex-direction:column;gap:18px}
+header h1{font-family:var(--f-display);font-weight:700;font-size:28px;letter-spacing:-.01em;margin:0;text-wrap:balance}
+header p{margin:4px 0 0;color:var(--muted);max-width:75ch}
+.grid{display:grid;grid-template-columns:340px minmax(0,1fr);gap:18px;align-items:start}
+@media (max-width:900px){.grid{grid-template-columns:minmax(0,1fr)}}
+.rail{background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:16px;display:flex;flex-direction:column;gap:18px}
+.rail h2,.card h2{font-family:var(--f-display);font-size:13px;font-weight:600;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);margin:0}
+fieldset{border:0;margin:0;padding:0;display:flex;flex-direction:column;gap:10px}
+.presets{display:flex;flex-wrap:wrap;gap:6px}
+button{font:inherit;cursor:pointer}
+.chip{border:1px solid var(--line);background:transparent;color:var(--ink);border-radius:999px;padding:5px 11px;font-size:12.5px}
+.chip:hover{border-color:var(--accent)}
+.chip[aria-pressed="true"]{background:var(--accent);border-color:var(--accent);color:var(--panel)}
+button:focus-visible,input:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.yr{display:grid;grid-template-columns:28px minmax(0,1fr) 30px 30px;gap:6px;align-items:center}
+.yr label{font-family:var(--f-num);font-size:12px;color:var(--muted)}
+.yr input{width:100%;font-family:var(--f-num);font-size:14px;padding:6px 8px;border:1px solid var(--line);border-radius:6px;background:var(--bg);color:var(--ink);text-align:right}
+.step{border:1px solid var(--line);background:var(--bg);color:var(--ink);border-radius:6px;height:32px}
+.hint{font-size:12px;color:var(--muted);margin:0}
+.ctl{display:flex;flex-direction:column;gap:4px}
+.ctl .top{display:flex;justify-content:space-between;gap:8px;align-items:baseline}
+.ctl label{font-size:13px}
+.ctl output{font-family:var(--f-num);font-size:13px;color:var(--accent);font-weight:500}
+input[type=range]{width:100%;accent-color:var(--accent)}
+.toggle{display:flex;align-items:center;gap:8px;font-size:13px}
+.toggle input{accent-color:var(--accent);width:16px;height:16px}
+.sub{display:flex;flex-direction:column;gap:10px;padding-left:10px;border-left:2px solid var(--line)}
+.main{display:flex;flex-direction:column;gap:18px;min-width:0}
+.tiles{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px}
+@media (max-width:640px){.tiles{grid-template-columns:repeat(2,minmax(0,1fr))}}
+.tile{background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:12px 14px}
+.tile .k{font-size:12px;color:var(--muted)}
+.tile .v{font-family:var(--f-display);font-weight:700;font-size:26px;font-variant-numeric:tabular-nums;margin-top:2px}
+.tile .s{font-size:12px;color:var(--muted);font-family:var(--f-num)}
+.card{background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:16px;display:flex;flex-direction:column;gap:12px;min-width:0}
+.charts{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:18px}
+@media (max-width:1050px){.charts{grid-template-columns:minmax(0,1fr)}}
+svg{width:100%;height:auto;display:block}
+svg text{font-family:var(--f-num);font-size:11px;fill:var(--muted)}
+.legend{display:flex;gap:14px;flex-wrap:wrap;font-size:12px;color:var(--muted)}
+.legend i{display:inline-block;width:10px;height:10px;border-radius:2px;margin-right:5px;vertical-align:-1px}
+.tablewrap{overflow-x:auto}
+table{border-collapse:collapse;width:100%;min-width:640px;font-variant-numeric:tabular-nums}
+th,td{padding:7px 10px;text-align:right;border-bottom:1px solid var(--line);white-space:nowrap}
+th:first-child,td:first-child{text-align:left;white-space:normal}
+thead th{font-family:var(--f-display);font-size:12px;font-weight:600;text-transform:uppercase;letter-spacing:.06em;color:var(--muted)}
+td{font-family:var(--f-num);font-size:13px}
+td:first-child{font-family:var(--f-body);font-size:13px}
+tr.group td{font-family:var(--f-display);font-size:12px;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);padding-top:14px;border-bottom:0}
+tr.total td{font-weight:600;color:var(--ink)}
+tr.total td:not(:first-child){color:var(--accent)}
+.pill{display:inline-block;font-family:var(--f-body);font-size:11px;padding:1px 7px;border-radius:999px;margin-left:6px}
+.pill.over{background:var(--warn-soft);color:var(--warn)}
+.pill.ok{background:var(--accent-soft);color:var(--ok)}
+.note{font-size:12.5px;color:var(--muted);margin:0;max-width:90ch}
+.callout{background:var(--warn-soft);color:var(--ink);border-radius:8px;padding:10px 12px;font-size:13px}
+.callout b{color:var(--warn)}
+.callout.good{background:var(--accent-soft)}
+.callout.good b{color:var(--ok)}
+.row{display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap}
+.copy{border:1px solid var(--accent);background:transparent;color:var(--accent);border-radius:6px;padding:6px 12px;font-size:13px}
+textarea{width:100%;min-height:150px;font-family:var(--f-num);font-size:12px;background:var(--bg);color:var(--ink);border:1px solid var(--line);border-radius:6px;padding:8px}
+@media (prefers-reduced-motion:reduce){*{transition:none!important}}
+</style>
+</head>
+<body>
+
+<div class="wrap">
+  <header>
+    <h1>Margin Labs: five-year revenue model</h1>
+    <p>Commercial plan: new-business deals from the commercial team, plus repeat loans from existing customers. Change new deals per year, loan size, pricing and repeat rate and the five-year view updates. Revenue is gross yield on the outstanding book, before credit losses and cost of capital.</p>
+  </header>
+
+  <div class="grid">
+    <aside class="rail" aria-label="Inputs">
+      <fieldset>
+        <h2>New deals per year</h2>
+        <div class="presets" id="presets">
+          <button class="chip" data-p="plan" aria-pressed="true">Mark's plan</button>
+          <button class="chip" data-p="v3">Current model (v3)</button>
+          <button class="chip" data-p="scale">2,000/month by Y5</button>
+        </div>
+        <div id="years"></div>
+        <p class="hint">New-business deals only. Repeat loans are added on top. Within each year deals ramp smoothly month to month.</p>
+      </fieldset>
+
+      <fieldset>
+        <h2>Loan size and pricing</h2>
+        <div class="ctl"><div class="top"><label for="size">Average loan (DTC / wholesale)</label><output id="sizeO"></output></div>
+          <input type="range" id="size" min="50000" max="500000" step="10000" value="200000"></div>
+        <div class="ctl"><div class="top"><label for="yield">IRR on outstanding balance</label><output id="yieldO"></output></div>
+          <input type="range" id="yield" min="0.10" max="0.40" step="0.005" value="0.20"><p class="hint" id="feeHint"></p></div>
+        <div class="ctl"><div class="top"><label for="dtc">DTC share (rest is wholesale)</label><output id="dtcO"></output></div>
+          <input type="range" id="dtc" min="0" max="1" step="0.05" value="0.5"></div>
+        <div class="ctl"><div class="top"><label for="durD">DTC loan length</label><output id="durDO"></output></div>
+          <input type="range" id="durD" min="2" max="12" step="1" value="4"></div>
+        <div class="ctl"><div class="top"><label for="durW">Wholesale loan length</label><output id="durWO"></output></div>
+          <input type="range" id="durW" min="2" max="12" step="1" value="6"></div>
+      </fieldset>
+
+      <fieldset>
+        <h2>Repeat loans (portfolio)</h2>
+        <div class="ctl"><div class="top"><label for="redraw">Repeat rate per loan</label><output id="redrawO"></output></div>
+          <input type="range" id="redraw" min="0" max="0.8" step="0.05" value="0.55"></div>
+        <div class="ctl"><div class="top"><label for="lag">Repeat loan taken after</label><output id="lagO"></output></div>
+          <input type="range" id="lag" min="3" max="12" step="1" value="6"></div>
+        <p class="hint">Each loan, new or repeat, has this chance of a follow-on loan of the same size and price. A repeat can't come before the loan is repaid.</p>
+      </fieldset>
+
+      <fieldset>
+        <h2>Mid-market</h2>
+        <label class="toggle"><input type="checkbox" id="ent"> Include mid-market deals</label>
+        <div class="sub" id="entBox">
+          <div class="ctl"><div class="top"><label for="entShare">Share of new deals</label><output id="entShareO"></output></div>
+            <input type="range" id="entShare" min="0.01" max="0.2" step="0.01" value="0.06"></div>
+          <div class="ctl"><div class="top"><label for="entSize">Mid-market loan size</label><output id="entSizeO"></output></div>
+            <input type="range" id="entSize" min="250000" max="3000000" step="50000" value="1000000"></div>
+          <div class="ctl"><div class="top"><label for="entYield">Mid-market yield</label><output id="entYieldO"></output></div>
+            <input type="range" id="entYield" min="0.08" max="0.2" step="0.005" value="0.13"></div>
+          <p class="hint">Modelled as a credit line held drawn for 12 months, so the full amount earns the yield. Depends on a product that doesn't exist yet.</p>
+        </div>
+      </fieldset>
+
+      <fieldset>
+        <h2>Team</h2>
+        <div class="ctl"><div class="top"><label for="hcC">Commercial people (planned)</label><output id="hcCO"></output></div>
+          <input type="range" id="hcC" min="1" max="20" step="1" value="3"></div>
+        <div class="ctl"><div class="top"><label for="hcP">Portfolio people (planned)</label><output id="hcPO"></output></div>
+          <input type="range" id="hcP" min="1" max="20" step="1" value="1"></div>
+        <div class="ctl"><div class="top"><label for="capC">New deals per commercial person / month</label><output id="capCO"></output></div>
+          <input type="range" id="capC" min="5" max="80" step="1" value="28"></div>
+        <div class="ctl"><div class="top"><label for="capP">Repeat loans per portfolio person / month</label><output id="capPO"></output></div>
+          <input type="range" id="capP" min="5" max="100" step="1" value="25"></div>
+        <p class="hint">Team view covers Years 1–2 only. Beyond that, headcount depends on how much more is automated. Cost per head: commercial €150k, portfolio €120k, all-in.</p>
+      </fieldset>
+    </aside>
+
+    <main class="main">
+      <section class="tiles" id="tiles" aria-label="Headline numbers"></section>
+      <div id="teamCallout"></div>
+      <div class="charts">
+        <section class="card">
+          <div class="row"><h2>Gross revenue by year</h2>
+            <div class="legend"><span><i style="background:var(--accent)"></i>New business</span><span><i style="background:var(--repeat)"></i>Repeat loans</span></div></div>
+          <svg id="revChart" viewBox="0 0 520 260" role="img" aria-label="Revenue by year, new business and repeat loans"></svg>
+        </section>
+        <section class="card">
+          <div class="row"><h2>Deals per month</h2>
+            <div class="legend"><span><i style="background:var(--accent)"></i>New</span><span><i style="background:var(--repeat)"></i>Repeat</span><span><i style="background:var(--muted)"></i>2,000/mo target</span></div></div>
+          <svg id="dealChart" viewBox="0 0 520 260" role="img" aria-label="New and repeat deals per month across five years"></svg>
+        </section>
+      </div>
+      <section class="card">
+        <h2>Five-year view</h2>
+        <div class="tablewrap"><table id="tbl"></table></div>
+        <p class="note">Team rows stop at Year 2 because later headcount depends on automation still to be built. DTC and wholesale advances are repaid daily, so each one's balance runs down evenly to zero over its term. Revenue = outstanding balance × IRR ÷ 12 each month, so a 6-month €200k advance at 20% earns about €10k (5%). Year-end run-rate = December revenue × 12. Repeat loans are the same size, mix and price as new deals.</p>
+      </section>
+      <section class="card">
+        <div class="row"><h2>Summary to share</h2><button class="copy" id="copyBtn">Copy summary</button></div>
+        <textarea id="summary" readonly aria-label="Scenario summary text"></textarea>
+      </section>
+    </main>
+  </div>
+</div>
+
+<script>
+const PRESETS={
+  plan:[250,750,1000,1500,2000],
+  v3:[162,717,1107,1500,2000],
+  scale:[250,750,2500,8000,19000]
+};
+const $=id=>document.getElementById(id);
+let deals=[...PRESETS.plan];
+
+function buildYears(){
+  const box=$('years');box.innerHTML='';
+  deals.forEach((v,i)=>{
+    const r=document.createElement('div');r.className='yr';
+    r.innerHTML=`<label for="y${i}">Y${i+1}</label><input id="y${i}" type="number" min="0" step="50" value="${v}" inputmode="numeric">
+      <button class="step" data-i="${i}" data-d="-1" aria-label="Fewer Y${i+1} deals">−</button><button class="step" data-i="${i}" data-d="1" aria-label="More Y${i+1} deals">+</button>`;
+    box.appendChild(r);
+  });
+  box.querySelectorAll('input').forEach((inp,i)=>inp.addEventListener('input',()=>{deals[i]=Math.max(0,+inp.value||0);clearPreset();calc();}));
+  box.querySelectorAll('.step').forEach(b=>b.addEventListener('click',()=>{
+    const i=+b.dataset.i, inc=deals[i]>=5000?1000:deals[i]>=1000?250:50;
+    deals[i]=Math.max(0,deals[i]+inc*(+b.dataset.d));$('y'+i).value=deals[i];clearPreset();calc();}));
+}
+function clearPreset(){document.querySelectorAll('#presets .chip').forEach(c=>c.setAttribute('aria-pressed','false'));}
+document.querySelectorAll('#presets .chip').forEach(c=>c.addEventListener('click',()=>{
+  deals=[...PRESETS[c.dataset.p]];buildYears();clearPreset();c.setAttribute('aria-pressed','true');calc();}));
+
+// Smooth monthly profile: anchor each year's average at mid-year, interpolate, then rescale so each year hits its total.
+function profile(A){
+  const pts=[[0,0]].concat(A.map((a,y)=>[12*y+6.5,a/12]));
+  const m=[];
+  for(let t=1;t<=60;t++){
+    let v;
+    if(t>=pts[pts.length-1][0]){const [x1,y1]=pts[pts.length-2],[x2,y2]=pts[pts.length-1];v=y2+(y2-y1)/(x2-x1)*(t-x2);}
+    else{for(let k=0;k<pts.length-1;k++){const [x1,y1]=pts[k],[x2,y2]=pts[k+1];if(t>=x1&&t<=x2){v=y1+(y2-y1)*(t-x1)/(x2-x1);break;}}}
+    m.push(Math.max(0,v));
+  }
+  for(let y=0;y<5;y++){const s=m.slice(12*y,12*y+12).reduce((a,b)=>a+b,0);for(let t=12*y;t<12*y+12;t++)m[t]=s>0?m[t]*A[y]/s:0;}
+  return m;
+}
+
+const eur=(v,d=1)=>{const a=Math.abs(v);return a>=1e9?'€'+(v/1e9).toFixed(2)+'bn':a>=1e6?'€'+(v/1e6).toFixed(d)+'M':a>=1e3?'€'+(v/1e3).toFixed(0)+'k':'€'+v.toFixed(0);};
+const num=v=>Math.round(v).toLocaleString('en-IE');
+const pct=v=>(v*100).toFixed(v*100%1?1:0)+'%';
+
+function calc(){
+  const P={size:+$('size').value,y:+$('yield').value,dtc:+$('dtc').value,durD:+$('durD').value,durW:+$('durW').value,
+    rd:+$('redraw').value,lag:+$('lag').value,ent:$('ent').checked,eS:+$('entShare').value,eSize:+$('entSize').value,eY:+$('entYield').value,
+    hcC:+$('hcC').value,hcP:+$('hcP').value,capC:+$('capC').value,capP:+$('capP').value};
+  $('sizeO').textContent=eur(P.size);const fee=d=>P.y*d/24;$('feeHint').textContent=`Repaid daily, so the balance runs down over the term. Fee per ${eur(P.size)} advance: DTC ${P.durD} mo ${eur(P.size*fee(P.durD))} (${pct(fee(P.durD))}), wholesale ${P.durW} mo ${eur(P.size*fee(P.durW))} (${pct(fee(P.durW))}).`;$('yieldO').textContent=pct(P.y);$('dtcO').textContent=pct(P.dtc);
+  $('durDO').textContent=P.durD+' mo';$('durWO').textContent=P.durW+' mo';$('redrawO').textContent=pct(P.rd);$('lagO').textContent=P.lag+' mo';
+  $('entShareO').textContent=pct(P.eS);$('entSizeO').textContent=eur(P.eSize,2);$('entYieldO').textContent=pct(P.eY);
+  $('hcCO').textContent=P.hcC;$('hcPO').textContent=P.hcP;$('capCO').textContent=P.capC;$('capPO').textContent=P.capP;
+  $('entBox').hidden=!P.ent;
+
+  const eShare=P.ent?P.eS:0;
+  const segs=[
+    {sh:(1-eShare)*P.dtc,size:P.size,dur:P.durD,y:P.y,am:true},
+    {sh:(1-eShare)*(1-P.dtc),size:P.size,dur:P.durW,y:P.y,am:true},
+    {sh:eShare,size:P.eSize,dur:12,y:P.eY,am:false}
+  ].filter(s=>s.sh>0);
+  const T=60,nw=profile(deals);
+  const newBook=Array(T).fill(0),repBook=Array(T).fill(0),newRev=Array(T).fill(0),repRev=Array(T).fill(0),rep=Array(T).fill(0),orig=Array(T).fill(0);
+  segs.forEach(s=>{
+    const lag=Math.max(P.lag,s.dur);const dr=Array(T).fill(0),rp=Array(T).fill(0);
+    for(let t=0;t<T;t++){rp[t]=t>=lag?P.rd*dr[t-lag]:0;dr[t]=nw[t]*s.sh+rp[t];rep[t]+=rp[t];orig[t]+=dr[t]*s.size;}
+    for(let i=0;i<T;i++){const an=nw[i]*s.sh*s.size,ar=rp[i]*s.size;
+      for(let t=i;t<Math.min(T,i+s.dur);t++){const k=s.am?1-(t-i+0.5)/s.dur:1;newBook[t]+=an*k;repBook[t]+=ar*k;newRev[t]+=an*k*s.y/12;repRev[t]+=ar*k*s.y/12;}}
+  });
+  const Y=[];
+  let firstOverC=null,firstOverP=null;
+  for(let t=0;t<24;t++){
+    if(firstOverC===null&&Math.ceil(nw[t]/P.capC-1e-9)>P.hcC)firstOverC=t+1;
+    if(firstOverP===null&&Math.ceil(rep[t]/P.capP-1e-9)>P.hcP)firstOverP=t+1;
+  }
+  for(let y=0;y<5;y++){
+    const r=[12*y,12*y+12],sl=a=>a.slice(...r).reduce((p,c)=>p+c,0),e=12*y+11;
+    let needC=0,needP=0,cost=0;
+    for(let t=r[0];t<r[1];t++){const c=Math.max(1,Math.ceil(nw[t]/P.capC-1e-9)),p=Math.max(rep[t]>0?1:0,Math.ceil(rep[t]/P.capP-1e-9));needC=Math.max(needC,c);needP=Math.max(needP,p);cost+=(c*150000+p*120000)/12;}
+    Y.push({nd:sl(nw),rd:sl(rep),dec:nw[e],decR:rep[e],orig:sl(orig),book:newBook[e]+repBook[e],bookN:newBook[e],bookR:repBook[e],
+      revN:sl(newRev),revR:sl(repRev),rr:(newRev[e]+repRev[e])*12,needC,needP,cost});
+  }
+  Y.forEach(o=>{o.rev=o.revN+o.revR;o.heads=o.needC+o.needP;});
+
+  // tiles
+  const y3=Y[2],y5=Y[4];
+  $('tiles').innerHTML=[
+    ['Year 3 revenue',eur(y3.rev),`exit run-rate ${eur(y3.rr)}`],
+    ['Year 5 revenue',eur(y5.rev),`exit run-rate ${eur(y5.rr)}`],
+    ['Book at end of Y5',eur(y5.book,0),`${pct(y5.bookR/y5.book||0)} from repeat loans`],
+    ['New deals / month, Dec Y5',num(y5.dec),y5.dec>=2000?'hits 2,000/mo':`${num(2000-y5.dec)} short of 2,000`]
+  ].map(([k,v,s])=>`<div class="tile"><div class="k">${k}</div><div class="v">${v}</div><div class="s">${s}</div></div>`).join('');
+
+  // team callout
+  const mo=m=>`month ${m} (Y${Math.ceil(m/12)})`;
+  let msg;
+  if(!firstOverC&&!firstOverP) msg=`<div class="callout good"><b>${P.hcC} commercial + ${P.hcP} portfolio covers Years 1–2</b> at ${P.capC} new deals and ${P.capP} repeat loans per person per month.</div>`;
+  else{
+    const parts=[];
+    if(firstOverC)parts.push(`${P.hcC} commercial people reach capacity in <b>${mo(firstOverC)}</b>`);
+    if(firstOverP)parts.push(`${P.hcP} portfolio ${P.hcP>1?'people reach':'person reaches'} capacity in <b>${mo(firstOverP)}</b>`);
+    msg=`<div class="callout"><b>Years 1–2 team:</b> ${parts.join('; ')}, at ${P.capC} new deals and ${P.capP} repeat loans per person per month.</div>`;
+  }
+  $('teamCallout').innerHTML=msg;
+
+  // table
+  const H=(lab,f,cls='')=>`<tr class="${cls}"><td>${lab}</td>${Y.map(f).join('')}</tr>`;
+  const td=v=>`<td>${v}</td>`;
+  $('tbl').innerHTML=`<thead><tr><th></th>${Y.map((_,i)=>`<th>Year ${i+1}</th>`).join('')}</tr></thead><tbody>
+   <tr class="group"><td colspan="6">Deals</td></tr>
+   ${H('New deals',o=>td(num(o.nd)))}
+   ${H('Repeat loans',o=>td(num(o.rd)))}
+   ${H('Total loans',o=>td(num(o.nd+o.rd)),'total')}
+   ${H('New deals / month in December',o=>td(num(o.dec)))}
+   ${H('Repeat loans / month in December',o=>td(num(o.decR)))}
+   <tr class="group"><td colspan="6">Lending and book</td></tr>
+   ${H('Amount lent',o=>td(eur(o.orig)))}
+   ${H('Book at year end',o=>td(eur(o.book)))}
+   ${H('  of which repeat loans',o=>td(eur(o.bookR)))}
+   <tr class="group"><td colspan="6">Gross revenue</td></tr>
+   ${H('New business',o=>td(eur(o.revN)))}
+   ${H('Repeat loans',o=>td(eur(o.revR)))}
+   ${H('Total revenue',o=>td(eur(o.rev)),'total')}
+   ${H('Year-end run-rate',o=>td(eur(o.rr)))}
+   <tr class="group"><td colspan="6">Team needed, Years 1–2 (peak in year)</td></tr>
+   ${H(`Commercial (plan: ${P.hcC})`,(o,i)=>i>1?td('–'):`<td>${o.needC}<span class="pill ${o.needC>P.hcC?'over':'ok'}">${o.needC>P.hcC?'+'+(o.needC-P.hcC):'ok'}</span></td>`)}
+   ${H(`Portfolio (plan: ${P.hcP})`,(o,i)=>i>1?td('–'):`<td>${o.needP}<span class="pill ${o.needP>P.hcP?'over':'ok'}">${o.needP>P.hcP?'+'+(o.needP-P.hcP):'ok'}</span></td>`)}
+   ${H('Team cost',(o,i)=>td(i>1?'–':eur(o.cost)))}
+  </tbody>`;
+
+  drawRev(Y);drawDeals(nw,rep);
+  summary(P,Y,firstOverC,firstOverP);
+}
+
+function axisTicks(max){const raw=max/4,mag=Math.pow(10,Math.floor(Math.log10(raw||1))),n=raw/mag,step=(n<=1?1:n<=2?2:n<=2.5?2.5:n<=5?5:10)*mag;const top=Math.ceil(max/step)*step||step;const t=[];for(let v=0;v<=top+1e-9;v+=step)t.push(v);return{top,t};}
+function drawRev(Y){
+  const W=520,Hh=260,L=52,R=10,Tp=14,B=28,pw=W-L-R,ph=Hh-Tp-B;
+  const {top,t}=axisTicks(Math.max(...Y.map(o=>o.rev)));const sy=v=>Tp+ph-v/top*ph;
+  let s=t.map(v=>`<line x1="${L}" x2="${W-R}" y1="${sy(v)}" y2="${sy(v)}" stroke="var(--line)"/><text x="${L-6}" y="${sy(v)+4}" text-anchor="end">${eur(v,0)}</text>`).join('');
+  const bw=pw/5*0.56;
+  Y.forEach((o,i)=>{const x=L+pw/5*i+(pw/5-bw)/2;
+    s+=`<rect x="${x}" y="${sy(o.revN)}" width="${bw}" height="${Tp+ph-sy(o.revN)}" fill="var(--accent)"/>`;
+    s+=`<rect x="${x}" y="${sy(o.rev)}" width="${bw}" height="${sy(o.revN)-sy(o.rev)}" fill="var(--repeat)"/>`;
+    s+=`<text x="${x+bw/2}" y="${sy(o.rev)-5}" text-anchor="middle" style="fill:var(--ink)">${eur(o.rev)}</text>`;
+    s+=`<text x="${x+bw/2}" y="${Hh-8}" text-anchor="middle">Y${i+1}</text>`;});
+  $('revChart').innerHTML=s;
+}
+function drawDeals(nw,rep){
+  const W=520,Hh=260,L=52,R=10,Tp=14,B=28,pw=W-L-R,ph=Hh-Tp-B;
+  const mx=Math.max(2000,...nw,...rep);const {top,t}=axisTicks(mx);const sy=v=>Tp+ph-v/top*ph,sx=i=>L+i/59*pw;
+  let s=t.map(v=>`<line x1="${L}" x2="${W-R}" y1="${sy(v)}" y2="${sy(v)}" stroke="var(--line)"/><text x="${L-6}" y="${sy(v)+4}" text-anchor="end">${num(v)}</text>`).join('');
+  for(let y=0;y<=5;y++){const x=L+pw*(12*y)/59.0;if(y<5)s+=`<text x="${sx(12*y+5.5)}" y="${Hh-8}" text-anchor="middle">Y${y+1}</text>`;}
+  s+=`<line x1="${L}" x2="${W-R}" y1="${sy(2000)}" y2="${sy(2000)}" stroke="var(--muted)" stroke-dasharray="4 4"/>`;
+  const path=a=>a.map((v,i)=>(i?'L':'M')+sx(i).toFixed(1)+' '+sy(v).toFixed(1)).join(' ');
+  s+=`<path d="${path(nw)} L${sx(59)} ${sy(0)} L${sx(0)} ${sy(0)} Z" fill="var(--accent-soft)" stroke="none" opacity=".7"/>`;
+  s+=`<path d="${path(rep)}" fill="none" stroke="var(--repeat)" stroke-width="2"/>`;
+  s+=`<path d="${path(nw)}" fill="none" stroke="var(--accent)" stroke-width="2.2"/>`;
+  s+=`<circle cx="${sx(59)}" cy="${sy(nw[59])}" r="3.5" fill="var(--accent)"/>`;
+  $('dealChart').innerHTML=s;
+}
+function summary(P,Y,oc,op){
+  const L=[];
+  L.push(`Margin Labs: five-year scenario (gross revenue, before losses and cost of capital)`);
+  L.push(`Assumptions: avg advance ${eur(P.size)} at ${pct(P.y)} IRR on outstanding balance (daily repayment), DTC ${P.durD}mo / wholesale ${P.durW}mo, ${pct(P.rd)} repeat rate, mid-market ${P.ent?`on (${pct(P.eS)} of deals, ${eur(P.eSize,2)} at ${pct(P.eY)})`:'off'}. Commercial plan: ${P.hcC} commercial + ${P.hcP} portfolio in Years 1–2.`);
+  L.push('');
+  Y.forEach((o,i)=>L.push(`Y${i+1}: ${num(o.nd)} new + ${num(o.rd)} repeat loans | revenue ${eur(o.rev)} | year-end book ${eur(o.book)} | exit run-rate ${eur(o.rr)}`));
+  L.push('');
+  L.push(oc||op?`Team (Years 1–2): planned team reaches capacity${oc?` (commercial in month ${oc})`:''}${op?` (portfolio in month ${op})`:''}.`:`Team (Years 1–2): planned team covers the volume.`);
+  $('summary').value=L.join('\n');
+}
+$('copyBtn').addEventListener('click',()=>{const t=$('summary').value,b=$('copyBtn');
+  const done=()=>{b.textContent='Copied';setTimeout(()=>b.textContent='Copy summary',1500);};
+  if(navigator.clipboard)navigator.clipboard.writeText(t).then(done).catch(()=>{$('summary').select();});else $('summary').select();});
+document.querySelectorAll('.rail input[type=range], #ent').forEach(i=>i.addEventListener('input',calc));
+buildYears();calc();
+</script>
+</body>
+</html>
